@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:pe="http://primefaces.org/ui/extensions">
+<h:head>
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<title>Tela de Pausas</title>
+	<h:outputStylesheet library="css" name="file.css" />
+</h:head>
+
+
+
+
+<h:body>
+	<p:growl id="mensagem" />
+
+	<p:graphicImage library="imagens" name="suaLogoAqui.jpg" width="250"
+		styleClass="imagemCentralizada" />
+
+	<h:form>
+
+		<!-- Barra de menu do usuario -->
+		<p:menubar>
+			<p:submenu label="#{autenticacaoBean.usuarioLogado.nome}">
+
+				<p:menuitem value="Nova senha"
+					oncomplete="PF('dlgNovaSenha').show();" icon="fa fa-key">
+
+				</p:menuitem>
+
+				<p:menuitem value="Pausa" oncomplete="PF('dlgPausa').show();  "
+					icon="fa fa-pause" update=":formListagem:tabela"
+					rendered="#{autenticacaoBean.naoTemPermissoes(['c010816'])}">
+
+				</p:menuitem>
+
+				<p:menuitem value="Novo usuário"
+					oncomplete="PF('dlgCadastro').show();"
+					actionListener="#{usuarioBean.novo}"
+					update=":formRegCadastro:painelCadastro " icon="fa fa-plus"
+					rendered="#{autenticacaoBean.temPermissoes(['c010816'])}" />
+
+				<p:menuitem value="Sobre" icon="ui-icon-info" />
+			</p:submenu>
+
+
+
+			<f:facet name="options">
+				<p:commandButton value="-"
+					actionListener="#{autenticacaoBean.diminuirPausas}"
+					rendered="#{autenticacaoBean.temPermissoes(['c010816'])}"
+					icon="fa fa-angle-up" update="mensagem" />
+
+
+				<p:commandButton value="+"
+					actionListener="#{autenticacaoBean.aumentarPausas}"
+					rendered="#{autenticacaoBean.temPermissoes(['c010816'])}"
+					icon="fa fa-angle-double-up" update="mensagem" />
+
+				<p:commandButton value="padrão"
+					actionListener="#{autenticacaoBean.padraoPausas}"
+					rendered="#{autenticacaoBean.temPermissoes(['c010816'])}"
+					icon="fa fa-angle-double-up" update="mensagem" />
+				<p:commandButton value="Sair" icon="ui-icon-extlink"
+					actionListener="#{autenticacaoBean.logout}" />
+			</f:facet>
+		</p:menubar>
+
+	</h:form>
+	<!-- Barra de menu do usuario -->
+
+
+	<!-- Tabela de usuarios -->
+	<h:form id="formListagem">
+		<p:poll interval="5" listener="#{usuarioBean.listar}" update="tabela" />
+
+		<p:dataTable id="tabela" value="#{usuarioBean.usuarios}" var="usuario">
+
+			<p:column headerText="Usuário" sortBy="#{usuario.nome}">
+				<h:outputText value="#{usuario.nome}" />
+			</p:column>
+
+			<p:column headerText="Status" sortBy="#{usuario.status}">
+				<h:outputText value="#{usuario.flagStatus}" id="status" />
+				<h:outputText value=" - #{usuario.flagLogado}"
+					rendered="#{autenticacaoBean.temPermissoes(['c010816'])}" />
+			</p:column>
+
+
+			<p:column headerText="Primeira pausa ">
+
+				<h:outputText id="idTxtCounter" value="#{usuario.hms}" />
+			</p:column>
+
+			<p:column headerText="intervalo ">
+
+				<h:outputText id="intervalo" value="#{usuario.intervalo}" />
+			</p:column>
+
+			<p:column headerText="Ultima Pausa ">
+
+				<h:outputText id="UltimaPausa" value="#{usuario.terceiraPausa}" />
+
+			</p:column>
+
+			<p:column headerText="Horário de pausas">
+				<h:panelGrid columns="2">
+					<h:outputText value="Primeira Pausa " />
+					<h:outputText value="#{usuario.horaDaPausa.time}">
+						<f:convertDateTime pattern="HH:mm" timeZone="America/Fortaleza" />
+					</h:outputText>
+					<h:outputText value="Intervalo " />
+					<h:outputText value="#{usuario.horaDoIntervalo.time}">
+						<f:convertDateTime pattern="HH:mm" timeZone="America/Fortaleza" />
+					</h:outputText>
+					<h:outputText value="Ultima Pausa " />
+					<h:outputText value="#{usuario.horaDaUPausa.time}">
+						<f:convertDateTime pattern="HH:mm" timeZone="America/Fortaleza" />
+					</h:outputText>
+				</h:panelGrid>
+			</p:column>
+
+			<p:column headerText="Opções"
+				rendered="#{autenticacaoBean.temPermissoes(['c010816'])}">
+				<p:commandButton icon="ui-icon-trash"
+					actionListener="#{usuarioBean.excluir}"
+					update=":mensagem :formListagem:tabela">
+					<p:confirm header="Confirmação" message="Deseja excluir o usuario"
+						icon="ui-icon-alert" />
+					<f:attribute name="usuarioSelecionado" value="#{usuario}" />
+				</p:commandButton>
+
+				<p:commandButton icon="fa fa-lock"
+					actionListener="#{usuarioBean.liberarSessao}" update=":mensagem">
+					<f:attribute name="usuarioSelecionado" value="#{usuario}" />
+				</p:commandButton>
+
+				<p:commandButton icon="ui-icon-pencil"
+					actionListener="#{usuarioBean.editarCadastro}"
+					update=":formCadastro:painel"
+					oncomplete="PF('dlgEditarCadastro').show();">
+					<f:attribute name="usuarioSelecionado" value="#{usuario}" />
+					<f:actionListener
+						type="org.omnifaces.eventlistener.ResetInputAjaxActionListener" />
+				</p:commandButton>
+
+			</p:column>
+
+		</p:dataTable>
+
+		<!-- Confirmação de exclusão de usuário -->
+		<p:confirmDialog global="true">
+			<p:commandButton value="Sim" type="button"
+				styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+			<p:commandButton value="Não" type="button"
+				styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+		</p:confirmDialog>
+	</h:form>
+	<!-- Tabela de usuarios -->
+
+	<!-- Dialogo de registrar Pausa -->
+	<p:dialog header="Registrar pausa" widgetVar="dlgPausa"
+		draggable="false" resizable="false" modal="true">
+		<h:form id="formRegistrarPausa">
+			<p:poll interval="1" widgetVar="poll"
+				update=":formPausa:tempoPausa :formListagem:tabela:intervalo"
+				autoStart="false" listener="#{autenticacaoBean.timerHms}" />
+
+			<h:panelGrid columns="2" id="painelPausa">
+
+				<p:selectOneMenu id="pausa"
+					value="#{autenticacaoBean.metodoSelecionado}"
+					converter="entityConverter">
+
+
+					<f:selectItems value="#{autenticacaoBean.todosOsMetodos}"
+						id="items" />
+
+				</p:selectOneMenu>
+			</h:panelGrid>
+			<h:panelGrid>
+				<p:commandButton icon="ui-icon-check" value="ok"
+					actionListener="#{autenticacaoBean.pausa}"
+					oncomplete="PF('dlgPausa').hide();"
+					update=":mensagem :formListagem:tabela :formPausa:painelEmPausa" />
+			</h:panelGrid>
+		</h:form>
+	</p:dialog>
+	<!-- Dialogo de registrar Pausa -->
+
+	<!-- em pausa -->
+	<p:dialog header="Em pausa" widgetVar="dlgEmPausa" showEffect="bounce"
+		resizable="false" modal="true" closable="false" draggable="true">
+
+		<h:form id="formPausa">
+			<h:panelGrid cellpadding="20" columns="2" id="painelEmPausa">
+				<p:outputLabel value="Tempo de pausa: " />
+				<h:outputText value="#{autenticacaoBean.hms}" id="tempoPausa" />
+				<p:commandButton value="Cancelar"
+					oncomplete="PF('dlgEmPausa').hide();"
+					actionListener="#{autenticacaoBean.cancelarPausa}"
+					action="#{usuarioBean.listar}" onclick="PF('poll').stop();"
+					update=":formListagem:tabela :formPausa:painelEmPausa" />
+
+			</h:panelGrid>
+		</h:form>
+	</p:dialog>
+	<!-- Dialogo de registrar Pausa -->
+
+	<!-- Dialogo de editar cadastro -->
+	<p:dialog header="Editar cadastro" widgetVar="dlgEditarCadastro"
+		draggable="false" resizable="false" modal="true">
+
+		<h:form id="formCadastro">
+			<h:panelGrid id="painel">
+				<p:outputLabel value="Nome: " />
+				<p:inputText value="#{usuarioBean.usuario.nome}" size="30"
+					maxlength="55" required="true"
+					requiredMessage="Campo nome obrigatório" />
+
+				<p:outputLabel value="Matricula: " />
+				<p:inputText value="#{usuarioBean.usuario.matricula}" size="15"
+					maxlength="7" required="true"
+					requiredMessage="Campo matricula obrigatório" />
+
+				<p:outputLabel value="Senha: " />
+				<p:password value="#{usuarioBean.usuario.senhaCriptografada}"
+					size="15" maxlength="12" required="true"
+					requiredMessage="Campo senha obrigatório" />
+
+				<p:outputLabel value="Primeira pausa:" />
+				<p:inputText value="#{usuarioBean.usuario.horaDaPausa.time}"
+					required="true" requiredMessage="Campo primeiro pausa obrigatório">
+					<f:convertDateTime pattern="HH:mm" timeZone="America/Fortaleza" />
+				</p:inputText>
+
+				<p:outputLabel value="Intervalo:" />
+				<p:inputText value="#{usuarioBean.usuario.horaDoIntervalo.time}"
+					required="true" requiredMessage="Campo primeiro pausa obrigatório">
+					<f:convertDateTime pattern="HH:mm" timeZone="America/Fortaleza" />
+				</p:inputText>
+
+				<p:outputLabel value="Ultima pausa pausa:" />
+				<p:inputText value="#{usuarioBean.usuario.horaDaUPausa.time}"
+					required="true" requiredMessage="Campo primeiro pausa obrigatório">
+					<f:convertDateTime pattern="HH:mm" timeZone="America/Fortaleza" />
+				</p:inputText>
+			</h:panelGrid>
+
+			<h:panelGrid>
+				<p:commandButton value="Salvar"
+					actionListener="#{usuarioBean.salvar}"
+					update=":mensagem :formCadastro:painel :formListagem:tabela"
+					oncomplete="PF('dlgEditarCadastro').hide();" />
+			</h:panelGrid>
+
+		</h:form>
+	</p:dialog>
+	<!-- Dialogo de editar cadastro -->
+
+	<!-- Dialogo nova senha -->
+	<p:dialog header="Nova senha" widgetVar="dlgNovaSenha"
+		draggable="false" resizable="false" modal="true">
+
+		<h:form id="formNovaSenha">
+			<h:panelGrid id="painelSenha" columns="2">
+				<p:outputLabel value="Nome: " />
+				<p:outputLabel value="#{autenticacaoBean.usuarioLogado.nome}" />
+
+
+				<p:outputLabel value="Senha: " />
+				<p:password
+					value="#{autenticacaoBean.usuarioLogado.senhaCriptografada}"
+					size="15" maxlength="12" required="true"
+					requiredMessage="Campo senha obrigatório" />
+			</h:panelGrid>
+
+			<h:panelGrid>
+				<p:commandButton value="Salvar"
+					actionListener="#{autenticacaoBean.editarSenha}"
+					update=":mensagem :formCadastro:painel :formListagem:tabela"
+					oncomplete="PF('dlgNovaSenha').hide();" />
+			</h:panelGrid>
+
+		</h:form>
+	</p:dialog>
+	<!-- Dialogo nova senha -->
+
+	<!-- Tela de novo cadastro -->
+	<p:dialog header="Cadastro de Usuário" widgetVar="dlgCadastro"
+		draggable="false" resizable="false" modal="true">
+		<h:form id="formRegCadastro">
+			<h:panelGrid id="painelCadastro">
+
+				<p:inputText value="#{usuarioBean.usuario.nome}" placeholder="Nome"
+					size="30" maxlength="55" required="true"
+					requiredMessage="Campo nome obrigatório" />
+
+				<p:inputText value="#{usuarioBean.usuario.matricula}"
+					placeholder="Matricula" size="15" maxlength="7" required="true"
+					requiredMessage="Campo matricula obrigatório" />
+
+				<p:password value="#{usuarioBean.usuario.senhaCriptografada}"
+					placeholder="Senha" size="15" maxlength="12" required="true"
+					requiredMessage="Campo senha obrigatório" />
+
+				<p:inputText value="#{usuarioBean.hora}"
+					placeholder="Horário da primeira pausa, ex: 11:50" />
+
+				<p:inputText value="#{usuarioBean.intervalo}"
+					placeholder="Horário do intervalo, ex: 11:50" />
+
+				<p:inputText value="#{usuarioBean.ultimaPausa}"
+					placeholder="Horário da ultima pausa, ex: 11:50" />
+			</h:panelGrid>
+
+			<h:panelGrid columns="2">
+				<p:commandButton value="Cadastrar"
+					actionListener="#{usuarioBean.salvar}"
+					update=":mensagem :formRegCadastro:painelCadastro :formListagem:tabela" />
+
+				<p:commandButton value="Cancelar"
+					oncomplete="PF('dlgCadastro').hide();" />
+			</h:panelGrid>
+		</h:form>
+
+	</p:dialog>
+	<!-- Tela de novo cadastro -->
+
+	<!-- formulario de notificacao de pausa -->
+	<h:form>
+		<p:poll interval="30" widgetVar="notificacao"
+			listener="#{autenticacaoBean.chamarNotificacao}" />
+
+		<script>
+			function mostrarMensagem() {
+				Notification.requestPermission();
+				new Notification("Esta na hora da sua Pausa!");
+			}
+		</script>
+	</h:form>
+
+</h:body>
+</html>
+
